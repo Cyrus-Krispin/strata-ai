@@ -23,9 +23,16 @@ export const diagnosticQuestionSchema = z
   })
   .strict();
 
+const conceptAssessmentSchema = z.enum([
+  'demonstrated',
+  'partial',
+  'misconception',
+  'uncertain',
+]);
+
 export const evaluationSchema = z
   .object({
-    status: z.enum(['demonstrated', 'partial', 'misconception', 'uncertain']),
+    status: conceptAssessmentSchema,
     evidence: z
       .array(
         z
@@ -37,13 +44,42 @@ export const evaluationSchema = z
       )
       .min(1)
       .max(3),
+    concepts: z
+      .array(
+        z
+          .object({
+            name: z
+              .string()
+              .trim()
+              .min(2)
+              .max(48)
+              .refine((name) => name.split(/\s+/u).length <= 5),
+            assessment: conceptAssessmentSchema,
+            evidenceOrdinal: z.number().int().min(0).max(2),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(4),
     unresolvedGap: z.string().trim().min(5).max(320),
     uncertainty: z.enum(['low', 'medium', 'high']),
     proposedNextMove: z.enum(['probe', 'advance', 'prerequisite', 'hint']),
     nextQuestion: shortQuestionSchema,
     nextQuestionRationale: z.string().trim().min(5).max(280),
   })
-  .strict();
+  .strict()
+  .superRefine((evaluation, context) => {
+    for (const [index, concept] of evaluation.concepts.entries()) {
+      if (concept.evidenceOrdinal >= evaluation.evidence.length) {
+        context.addIssue({
+          code: 'custom',
+          path: ['concepts', index, 'evidenceOrdinal'],
+          message:
+            'Concept evidence must reference an available evidence item.',
+        });
+      }
+    }
+  });
 
 export const helpLevels = [
   'rephrase',

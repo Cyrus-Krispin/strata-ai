@@ -116,6 +116,59 @@ const migrations = [
         ON learning_sessions(pending_feedback_question_id);
     `,
   },
+  {
+    version: 4,
+    sql: `
+      CREATE TABLE concepts (
+        id TEXT PRIMARY KEY,
+        normalized_name TEXT NOT NULL UNIQUE CHECK (length(normalized_name) BETWEEN 2 AND 80),
+        display_name TEXT NOT NULL CHECK (length(display_name) BETWEEN 2 AND 48),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      ) STRICT;
+
+      CREATE TABLE concept_evidence (
+        concept_id TEXT NOT NULL,
+        session_id TEXT NOT NULL,
+        question_id TEXT NOT NULL,
+        evaluation_id TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN ('demonstrated', 'partial', 'misconception', 'uncertain')),
+        uncertainty TEXT NOT NULL CHECK (uncertainty IN ('low', 'medium', 'high')),
+        evidence_excerpt TEXT NOT NULL CHECK (length(evidence_excerpt) BETWEEN 1 AND 320),
+        observed_at TEXT NOT NULL,
+        PRIMARY KEY (question_id, concept_id),
+        FOREIGN KEY (concept_id) REFERENCES concepts(id) ON DELETE CASCADE,
+        FOREIGN KEY (session_id) REFERENCES learning_sessions(id) ON DELETE CASCADE,
+        FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
+        FOREIGN KEY (evaluation_id) REFERENCES evaluations(id) ON DELETE CASCADE
+      ) STRICT;
+
+      CREATE TABLE concept_edges (
+        question_id TEXT NOT NULL,
+        source_concept_id TEXT NOT NULL,
+        target_concept_id TEXT NOT NULL,
+        session_id TEXT NOT NULL,
+        evaluation_id TEXT NOT NULL,
+        observed_at TEXT NOT NULL,
+        PRIMARY KEY (question_id, source_concept_id, target_concept_id),
+        CHECK (source_concept_id < target_concept_id),
+        FOREIGN KEY (source_concept_id) REFERENCES concepts(id) ON DELETE CASCADE,
+        FOREIGN KEY (target_concept_id) REFERENCES concepts(id) ON DELETE CASCADE,
+        FOREIGN KEY (session_id) REFERENCES learning_sessions(id) ON DELETE CASCADE,
+        FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
+        FOREIGN KEY (evaluation_id) REFERENCES evaluations(id) ON DELETE CASCADE
+      ) STRICT;
+
+      CREATE INDEX concept_evidence_concept_idx
+        ON concept_evidence(concept_id, observed_at DESC);
+      CREATE INDEX concept_evidence_session_idx
+        ON concept_evidence(session_id);
+      CREATE INDEX concept_edges_source_idx
+        ON concept_edges(source_concept_id, target_concept_id);
+      CREATE INDEX concept_edges_target_idx
+        ON concept_edges(target_concept_id, source_concept_id);
+    `,
+  },
 ] as const;
 
 export function migrateLearningDatabase(database: DatabaseSync): void {

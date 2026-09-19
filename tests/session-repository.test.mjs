@@ -25,6 +25,13 @@ const evaluation = {
       finding: 'Identifies the main lookup advantage.',
     },
   ],
+  concepts: [
+    {
+      name: 'Database indexes',
+      assessment: 'partial',
+      evidenceOrdinal: 0,
+    },
+  ],
   unresolvedGap: 'The write and storage costs are not yet explained.',
   uncertainty: 'low',
   proposedNextMove: 'probe',
@@ -98,6 +105,9 @@ test('migrates a version-1 database without rewriting existing sessions', () => 
     database
       .prepare("SELECT name FROM sqlite_master WHERE name = 'help_requests'")
       .get(),
+  );
+  assert.ok(
+    database.prepare("SELECT name FROM sqlite_master WHERE name = 'concepts'").get(),
   );
   assert.ok(
     database

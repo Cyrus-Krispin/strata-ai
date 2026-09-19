@@ -16,6 +16,7 @@ import {
   toLocalDataSession,
   type LocalDataSession,
 } from '../../learning/localData.ts';
+import { KnowledgeGraphRepository } from './knowledgeGraphRepository.ts';
 
 type RepositoryOptions = {
   createId?: () => string;
@@ -90,11 +91,13 @@ export class LearningSessionRepository {
   private readonly database: DatabaseSync;
   private readonly createId: () => string;
   private readonly now: () => string;
+  private readonly knowledgeGraph: KnowledgeGraphRepository;
 
   constructor(database: DatabaseSync, options: RepositoryOptions = {}) {
     this.database = database;
     this.createId = options.createId ?? randomUUID;
     this.now = options.now ?? (() => new Date().toISOString());
+    this.knowledgeGraph = new KnowledgeGraphRepository(database);
   }
 
   createSession(
@@ -236,6 +239,13 @@ export class LearningSessionRepository {
           evidence.finding,
         );
       });
+      this.knowledgeGraph.replaceQuestionEvidence({
+        sessionId: input.sessionId,
+        questionId: input.questionId,
+        evaluationId,
+        evaluation: input.evaluation,
+        observedAt: timestamp,
+      });
       this.database
         .prepare(
           `INSERT INTO questions
@@ -372,6 +382,13 @@ export class LearningSessionRepository {
           item.finding,
         ),
       );
+      this.knowledgeGraph.replaceQuestionEvidence({
+        sessionId: input.sessionId,
+        questionId: input.questionId,
+        evaluationId,
+        evaluation: input.evaluation,
+        observedAt: timestamp,
+      });
       this.database
         .prepare(
           `INSERT INTO evaluation_challenges
@@ -751,6 +768,7 @@ export class LearningSessionRepository {
       evaluation = {
         status: row.status!,
         evidence,
+        concepts: this.getConceptAnnotations(row.evaluation_id, evidence),
         unresolvedGap: row.unresolved_gap!,
         uncertainty: row.uncertainty!,
         proposedNextMove: row.proposed_next_move!,
@@ -823,12 +841,41 @@ export class LearningSessionRepository {
     return {
       status: row.status!,
       evidence,
+      concepts: this.getConceptAnnotations(row.evaluation_id!, evidence),
       unresolvedGap: row.unresolved_gap!,
       uncertainty: row.uncertainty!,
       proposedNextMove: row.proposed_next_move!,
       nextQuestion: row.next_question!,
       nextQuestionRationale: row.next_question_rationale!,
     };
+  }
+
+  private getConceptAnnotations(
+    evaluationId: string,
+    evidence: EvaluationResult['evidence'],
+  ): EvaluationResult['concepts'] {
+    const rows = this.database
+      .prepare(
+        `SELECT c.display_name AS name, ce.status AS assessment,
+                ce.evidence_excerpt
+         FROM concept_evidence ce
+         JOIN concepts c ON c.id = ce.concept_id
+         WHERE ce.evaluation_id = ?
+         ORDER BY c.display_name ASC`,
+      )
+      .all(evaluationId) as Array<{
+      name: string;
+      assessment: EvaluationResult['concepts'][number]['assessment'];
+      evidence_excerpt: string;
+    }>;
+    return rows.map((row) => ({
+      name: row.name,
+      assessment: row.assessment,
+      evidenceOrdinal: Math.max(
+        0,
+        evidence.findIndex((item) => item.excerpt === row.evidence_excerpt),
+      ),
+    }));
   }
 
   private transaction(work: () => void): void {
