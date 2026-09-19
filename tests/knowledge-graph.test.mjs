@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  layoutKnowledgeGraph,
   normalizeConceptName,
   scoreKnowledgeSignal,
 } from '../src/learning/knowledgeGraph.ts';
@@ -50,10 +51,8 @@ function setup() {
   let id = 0;
   let minute = 0;
   const options = {
-    createId: () =>
-      `00000000-0000-4000-8000-${String(++id).padStart(12, '0')}`,
-    now: () =>
-      new Date(Date.UTC(2026, 8, 1, 0, minute++)).toISOString(),
+    createId: () => `00000000-0000-4000-8000-${String(++id).padStart(12, '0')}`,
+    now: () => new Date(Date.UTC(2026, 8, 1, 0, minute++)).toISOString(),
   };
   return {
     database,
@@ -93,6 +92,37 @@ test('knowledge signal discounts uncertainty and stale evidence', () => {
   assert.ok(fresh.score > stale.score);
   assert.equal(fresh.state, 'strong');
   assert.notEqual(stale.state, 'strong');
+});
+
+test('lays out graph nodes deterministically inside the visual canvas', () => {
+  const nodes = ['alpha', 'beta', 'gamma'].map((id, index) => ({
+    id,
+    label: id,
+    signal: 0.3 + index * 0.2,
+    state: 'developing',
+    trend: 'steady',
+    evidenceCount: 1,
+    sessionCount: 1,
+    lastSeenAt: '2026-09-01T00:00:00.000Z',
+    latestEvidence: {},
+  }));
+  const edges = [
+    {
+      source: 'alpha',
+      target: 'beta',
+      evidenceCount: 1,
+      sessionCount: 1,
+      strength: 0.5,
+    },
+  ];
+
+  const first = layoutKnowledgeGraph(nodes, edges);
+  const second = layoutKnowledgeGraph(nodes, edges);
+
+  assert.deepEqual(first, second);
+  assert.equal(first.length, 3);
+  assert.ok(first.every(({ x }) => x >= 50 && x <= 850));
+  assert.ok(first.every(({ y }) => y >= 50 && y <= 510));
 });
 
 test('grows concepts and explainable relationships from evaluated attempts', () => {
