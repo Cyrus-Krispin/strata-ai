@@ -233,5 +233,15 @@ test('replaces graph contributions when an evaluation is challenged', () => {
   );
   assert.equal(snapshot.edges.length, 0);
   assert.equal(snapshot.nodes[0].latestEvidence.status, 'demonstrated');
+  assert.equal(
+    database.prepare('SELECT COUNT(*) AS count FROM concepts').get().count,
+    1,
+  );
+
+  sessions.deleteSession(session.id);
+  assert.equal(
+    database.prepare('SELECT COUNT(*) AS count FROM concepts').get().count,
+    0,
+  );
   database.close();
 });
