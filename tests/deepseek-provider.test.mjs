@@ -68,6 +68,13 @@ test('evaluates an attempt and proposes exactly one next question', async () => 
           finding: 'Connects loss to the optimization objective.',
         },
       ],
+      concepts: [
+        {
+          name: 'Loss functions',
+          assessment: 'partial',
+          evidenceOrdinal: 0,
+        },
+      ],
       unresolvedGap: 'The answer does not explain how parameters are updated.',
       uncertainty: 'low',
       proposedNextMove: 'probe',
@@ -102,6 +109,7 @@ test('evaluates an attempt and proposes exactly one next question', async () => 
   assert.deepEqual(client.requests[0].thinking, { type: 'disabled' });
   assert.match(client.requests[0].messages[0].content, /at most 16 words/i);
   assert.match(client.requests[0].messages[0].content, /smallest unresolved/i);
+  assert.match(client.requests[0].messages[0].content, /concepts/i);
 });
 
 test('fails closed when DeepSeek returns empty content', async () => {
@@ -148,6 +156,13 @@ test('reconsiders an evaluation with the learner challenge', async () => {
       {
         excerpt: 'using a lookup structure',
         finding: 'Identifies the indexed access mechanism.',
+      },
+    ],
+    concepts: [
+      {
+        name: 'Database indexes',
+        assessment: 'demonstrated',
+        evidenceOrdinal: 0,
       },
     ],
     unresolvedGap: 'The learner has not discussed write costs.',

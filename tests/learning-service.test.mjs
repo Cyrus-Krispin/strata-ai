@@ -22,6 +22,13 @@ const evaluation = {
       finding: 'Identifies the main lookup advantage.',
     },
   ],
+  concepts: [
+    {
+      name: 'Database indexes',
+      assessment: 'partial',
+      evidenceOrdinal: 0,
+    },
+  ],
   unresolvedGap: 'The write and storage costs are not yet explained.',
   uncertainty: 'low',
   proposedNextMove: 'probe',
