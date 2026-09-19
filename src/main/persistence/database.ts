@@ -106,7 +106,7 @@ const migrations = [
     `,
   },
   {
-    version: 3,
+    version: 4,
     sql: `
       ALTER TABLE learning_sessions
         ADD COLUMN pending_feedback_question_id TEXT

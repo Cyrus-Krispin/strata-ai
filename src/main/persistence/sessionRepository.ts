@@ -16,6 +16,7 @@ import {
   toLocalDataSession,
   type LocalDataSession,
 } from '../../learning/localData.ts';
+import type { KnowledgeGraphSnapshot } from '../../learning/knowledgeGraph.ts';
 import { KnowledgeGraphRepository } from './knowledgeGraphRepository.ts';
 
 type RepositoryOptions = {
@@ -582,6 +583,10 @@ export class LearningSessionRepository {
       pending.forEach((session) => this.insertImportedSession(session));
     });
     return { imported: pending.length, skipped };
+  }
+
+  getKnowledgeGraph(limit: number): KnowledgeGraphSnapshot {
+    return this.knowledgeGraph.getSnapshot({ limit });
   }
 
   deleteSession(sessionId: string): boolean {

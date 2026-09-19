@@ -4,6 +4,7 @@ import type {
   LearningSessionSummary,
   PersistedLearningSession,
 } from './history.ts';
+import type { KnowledgeGraphSnapshot } from './knowledgeGraph.ts';
 import { helpLevels } from './contracts.ts';
 import { LearningFailure, type LearningErrorCode } from './errors.ts';
 import type {
@@ -62,6 +63,12 @@ const listSessionsRequestSchema = z
   })
   .strict();
 
+const knowledgeGraphRequestSchema = z
+  .object({
+    limit: z.number().int().min(1).max(120).default(80),
+  })
+  .strict();
+
 const helpRequestSchema = z
   .object({
     requestId: z.uuid(),
@@ -90,6 +97,7 @@ export type FeedbackAcknowledgementRequest = z.infer<
 >;
 export type SubmitAttemptRequest = z.infer<typeof submitAttemptRequestSchema>;
 export type ListSessionsRequest = z.infer<typeof listSessionsRequestSchema>;
+export type KnowledgeGraphRequest = z.infer<typeof knowledgeGraphRequestSchema>;
 export type HelpRequest = z.infer<typeof helpRequestSchema>;
 export type ChallengeRequest = z.infer<typeof challengeRequestSchema>;
 
@@ -129,6 +137,9 @@ export type StrataAiApi = {
   listSessions(
     request?: Partial<ListSessionsRequest>,
   ): Promise<LearningResult<LearningSessionSummary[]>>;
+  getKnowledgeGraph(
+    request?: Partial<KnowledgeGraphRequest>,
+  ): Promise<LearningResult<KnowledgeGraphSnapshot>>;
   endSession(
     request: SessionRequest,
   ): Promise<LearningResult<PersistedLearningSession>>;
@@ -173,6 +184,12 @@ export function parseSubmitAttemptRequest(
 
 export function parseListSessionsRequest(value: unknown): ListSessionsRequest {
   return listSessionsRequestSchema.parse(value ?? {});
+}
+
+export function parseKnowledgeGraphRequest(
+  value: unknown,
+): KnowledgeGraphRequest {
+  return knowledgeGraphRequestSchema.parse(value ?? {});
 }
 
 export function parseHelpRequest(value: unknown): HelpRequest {

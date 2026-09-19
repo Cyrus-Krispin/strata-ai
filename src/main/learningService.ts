@@ -11,6 +11,7 @@ import type {
 import type { RecentLearningEvidence } from '../learning/providerContext.ts';
 import { LearningFailure } from '../learning/errors.ts';
 import { maximumHelpResponses } from '../learning/helpPolicy.ts';
+import type { KnowledgeGraphSnapshot } from '../learning/knowledgeGraph.ts';
 import type { LearningSessionRepository } from './persistence/sessionRepository.ts';
 
 type LearningProvider = {
@@ -261,6 +262,10 @@ export class LearningService {
     return this.runSessionOperation(sessionId, () =>
       this.repository.endSession(sessionId),
     );
+  }
+
+  getKnowledgeGraph(limit: number): KnowledgeGraphSnapshot {
+    return this.repository.getKnowledgeGraph(limit);
   }
 
   async acknowledgeFeedback(
