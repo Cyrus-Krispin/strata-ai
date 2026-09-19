@@ -1,6 +1,6 @@
 # Strata AI Architecture
 
-Status: Phase 3 adaptive learning controls implemented; longitudinal learning remains planned.
+Status: First longitudinal evidence-graph slice implemented.
 
 ## Decision Summary
 
@@ -48,6 +48,11 @@ The first learning slice now implements these boundaries:
   session records for resume and read-only review.
 - A deterministic five-level help ladder and append-only evaluation challenges
   let learners recover when stuck or misjudged without opening unrestricted chat.
+- Validated concept annotations grow a local evidence graph inside the same
+  transaction as each evaluation; challenges replace the current graph
+  contribution for their question.
+- A read-only graph snapshot computes uncertainty- and time-aware signals,
+  repeated co-occurrence strength, and a deterministic learning frontier.
 
 ## Process Responsibilities
 
@@ -87,15 +92,17 @@ The implemented SQLite entities are:
 - `help_requests`: ordered, idempotent graduated-help responses per question;
 - `evaluation_challenges`: learner rationales linking prior and revised judgments.
 
-Future evidence-graph entities remain planned:
+The evidence graph adds:
 
-- `sources`: optional learner-supplied material and provenance;
-- `concepts`: normalized concepts inferred from accumulated evidence;
-- `concept_evidence`: links between concepts and exact attempts or evaluations;
-- `concept_edges`: proposed relationships with provenance and learner status.
+- `concepts`: normalized concept identity and stable learner-facing labels;
+- `concept_evidence`: one current, attributable observation per concept and
+  question, linked to the exact evaluation and learner excerpt;
+- `concept_edges`: per-question co-occurrence evidence aggregated only when the
+  renderer requests a snapshot.
 
-Concept and edge tables wait until longitudinal evidence exists. Their claims
-must reference the stable attempt, evaluation, or evidence IDs implemented now.
+Future entities include optional learner-supplied `sources` and confirmed
+semantic relationships. The current graph calls an edge co-occurrence rather
+than inventing prerequisite or causal meaning.
 
 ## Planned Model Contract
 
