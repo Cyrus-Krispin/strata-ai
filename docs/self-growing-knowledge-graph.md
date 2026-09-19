@@ -31,7 +31,7 @@ An evaluation includes `concepts`, each with a concise canonical label, a
 concept-specific assessment, and an ordinal pointing at one exact evidence
 quote. Model output is validated before persistence.
 
-SQLite migration 3 adds:
+SQLite migration 4 adds:
 
 - `concepts`: canonical identity and learner-facing label;
 - `concept_evidence`: the current, attributable observation per concept and

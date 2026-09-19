@@ -54,10 +54,7 @@ export class KnowledgeGraphRepository {
       .prepare('DELETE FROM concept_evidence WHERE question_id = ?')
       .run(input.questionId);
 
-    const concepts = new Map<
-      string,
-      EvaluationResult['concepts'][number]
-    >();
+    const concepts = new Map<string, EvaluationResult['concepts'][number]>();
     for (const concept of input.evaluation.concepts ?? []) {
       const normalizedName = normalizeConceptName(concept.name);
       if (normalizedName.length >= 2 && !concepts.has(normalizedName)) {
@@ -286,10 +283,14 @@ export class KnowledgeGraphRepository {
       strongest: undefined,
     };
     const connection = selected.strongest;
+    const statePhrase =
+      selected.node.state === 'needs_attention'
+        ? 'needs attention'
+        : `is ${selected.node.state}`;
     return {
       conceptId: selected.node.id,
       reason: connection
-        ? `${selected.node.label} is still ${selected.node.state.replace('_', ' ')} and connects to stronger evidence in ${connection.label}.`
+        ? `${selected.node.label} ${statePhrase} and connects to stronger evidence in ${connection.label}.`
         : `${selected.node.label} has the least secure current evidence and is ready for another retrieval attempt.`,
     };
   }
