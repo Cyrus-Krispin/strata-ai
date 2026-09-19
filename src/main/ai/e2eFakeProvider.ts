@@ -62,6 +62,13 @@ export class E2eFakeLearningProvider {
           finding: 'Connects the index to avoiding a full row scan.',
         },
       ],
+      concepts: [
+        {
+          name: 'Index lookup',
+          assessment: status,
+          evidenceOrdinal: 0,
+        },
+      ],
       unresolvedGap:
         status === 'partial'
           ? 'The lookup structure itself is not yet named.'

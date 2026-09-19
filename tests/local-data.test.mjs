@@ -36,6 +36,13 @@ const evaluation = {
       finding: 'Identifies the main lookup advantage.',
     },
   ],
+  concepts: [
+    {
+      name: 'Index lookup',
+      assessment: 'partial',
+      evidenceOrdinal: 0,
+    },
+  ],
   unresolvedGap: 'The write and storage costs are not yet explained.',
   uncertainty: 'low',
   proposedNextMove: 'probe',
@@ -127,6 +134,32 @@ test('round-trips a session ended while feedback was awaiting acknowledgement', 
   assert.deepEqual(target.listAllSessions().map(toLocalDataSession), sessions);
 
   targetDatabase.close();
+  source.database.close();
+});
+
+test('keeps version-1 backups from before graph annotations restorable', () => {
+  const source = populatedRepository();
+  const session = toLocalDataSession(source.repository.listAllSessions()[0]);
+  for (const turn of session.turns) {
+    if (turn.evaluation) delete turn.evaluation.concepts;
+    for (const revision of turn.evaluationHistory) {
+      delete revision.evaluation.concepts;
+    }
+  }
+
+  const backup = learningBackupSchema.parse({
+    format: learningBackupFormat,
+    formatVersion: 1,
+    appVersion: '0.1.0',
+    createdAt: new Date().toISOString(),
+    sessions: [session],
+  });
+
+  assert.deepEqual(backup.sessions[0].turns[0].evaluation.concepts, []);
+  assert.deepEqual(
+    backup.sessions[0].turns[0].evaluationHistory[0].evaluation.concepts,
+    [],
+  );
   source.database.close();
 });
 

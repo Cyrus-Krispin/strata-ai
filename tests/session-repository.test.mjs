@@ -122,7 +122,7 @@ test('migrates a version-1 database without rewriting existing sessions', () => 
 });
 
 test('rejects gapped and newer migration histories', () => {
-  for (const versions of [[2], [1, 2, 3, 4]]) {
+  for (const versions of [[2], [1, 2, 3, 4, 5]]) {
     const database = new DatabaseSync(':memory:');
     database.exec(`
       CREATE TABLE schema_migrations (

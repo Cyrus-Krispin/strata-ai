@@ -11,11 +11,35 @@ import {
 export const learningBackupFormat = 'strata-ai-learning-backup';
 export const learningBackupFormatVersion = 1;
 
+// Version-1 backups predate graph annotations. Keep them restorable while the
+// live provider contract continues to require at least one grounded concept.
+const storedEvaluationSchema = z
+  .object({
+    ...evaluationSchema.shape,
+    concepts: z
+      .array(evaluationSchema.shape.concepts.element)
+      .max(4)
+      .default([]),
+  })
+  .strict()
+  .superRefine((evaluation, context) => {
+    for (const [index, concept] of evaluation.concepts.entries()) {
+      if (concept.evidenceOrdinal >= evaluation.evidence.length) {
+        context.addIssue({
+          code: 'custom',
+          path: ['concepts', index, 'evidenceOrdinal'],
+          message:
+            'Concept evidence must reference an available evidence item.',
+        });
+      }
+    }
+  });
+
 const evaluationRevisionSchema = z
   .object({
     id: z.uuid(),
     revision: z.number().int().min(1).max(3),
-    evaluation: evaluationSchema,
+    evaluation: storedEvaluationSchema,
     challengeRationale: z.string().min(2).max(1000).nullable(),
     createdAt: z.iso.datetime(),
   })
@@ -56,7 +80,7 @@ const turnSchema = z
     question: diagnosticQuestionSchema.shape.question,
     intent: diagnosticQuestionSchema.shape.intent,
     answer: z.string().min(1).max(12_000).nullable(),
-    evaluation: evaluationSchema.nullable(),
+    evaluation: storedEvaluationSchema.nullable(),
     evaluationHistory: z.array(evaluationRevisionSchema).max(3),
     help: z.array(helpSchema).max(9),
   })

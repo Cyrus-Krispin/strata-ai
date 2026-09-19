@@ -590,10 +590,13 @@ export class LearningSessionRepository {
   }
 
   deleteSession(sessionId: string): boolean {
-    const result = this.database
-      .prepare('DELETE FROM learning_sessions WHERE id = ?')
-      .run(sessionId);
-    return result.changes === 1;
+    return this.transaction(() => {
+      const result = this.database
+        .prepare('DELETE FROM learning_sessions WHERE id = ?')
+        .run(sessionId);
+      if (result.changes === 1) this.knowledgeGraph.pruneOrphanedConcepts();
+      return result.changes === 1;
+    });
   }
 
   private getSessionRow(sessionId: string): SessionRow | null {
@@ -728,6 +731,14 @@ export class LearningSessionRepository {
             );
         }
       }
+      const latestRevision = turn.evaluationHistory.at(-1)!;
+      this.knowledgeGraph.replaceQuestionEvidence({
+        sessionId: session.id,
+        questionId: turn.questionId,
+        evaluationId: latestRevision.id,
+        evaluation: latestRevision.evaluation,
+        observedAt: latestRevision.createdAt,
+      });
     }
 
     session.turns.slice(1).forEach((turn, index) => {
@@ -883,11 +894,12 @@ export class LearningSessionRepository {
     }));
   }
 
-  private transaction(work: () => void): void {
+  private transaction<T>(work: () => T): T {
     this.database.exec('BEGIN IMMEDIATE');
     try {
-      work();
+      const result = work();
       this.database.exec('COMMIT');
+      return result;
     } catch (error) {
       this.database.exec('ROLLBACK');
       throw error;

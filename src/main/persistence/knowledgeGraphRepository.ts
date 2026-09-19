@@ -135,6 +135,17 @@ export class KnowledgeGraphRepository {
         );
       }
     }
+    this.pruneOrphanedConcepts();
+  }
+
+  pruneOrphanedConcepts(): void {
+    this.database.exec(`
+      DELETE FROM concepts
+      WHERE NOT EXISTS (
+        SELECT 1 FROM concept_evidence
+        WHERE concept_evidence.concept_id = concepts.id
+      )
+    `);
   }
 
   getSnapshot(
