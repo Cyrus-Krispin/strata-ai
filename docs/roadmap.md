@@ -65,12 +65,17 @@ Decision gate: test whether revisits improve delayed recall and whether sources 
 
 ## Phase 5: Evidence Graph and Learning Frontier
 
+Status: first evidence-backed graph and frontier slice implemented; semantic
+relationships and learning-decision validation remain.
+
 Outcome: longitudinal attempts form a useful model of demonstrated knowledge and reachable next topics.
 
-- Concepts, prerequisites, misconceptions, and evidence provenance
-- Learner-visible topic audit and history
-- Suggested next questions at the learning frontier
-- Small graph view only if it improves a real learning decision
+- Normalized concepts, misconception signals, and exact evidence provenance
+  (implemented)
+- Learner-visible, uncertainty- and time-aware topic map (implemented)
+- Deterministic suggested learning frontier (implemented)
+- Learner-confirmed prerequisite and causal relationships
+- Validate whether the map improves a real revisit or next-topic decision
 
 Decision gate: retain the graph only if learners use it to choose what to revisit or learn next.
 
