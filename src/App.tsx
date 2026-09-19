@@ -180,14 +180,19 @@ export function App() {
 
   async function refreshKnowledgeGraph(): Promise<void> {
     setGraphLoading(true);
-    const result = await window.strataAi.getKnowledgeGraph();
-    if (result.ok) {
-      setKnowledgeGraph(result.data);
-      setGraphError('');
-    } else {
+    try {
+      const result = await window.strataAi.getKnowledgeGraph();
+      if (result.ok) {
+        setKnowledgeGraph(result.data);
+        setGraphError('');
+      } else {
+        setGraphError('The local knowledge map could not be loaded.');
+      }
+    } catch {
       setGraphError('The local knowledge map could not be loaded.');
+    } finally {
+      setGraphLoading(false);
     }
-    setGraphLoading(false);
   }
 
   async function requestSessionStart(topic: string): Promise<void> {

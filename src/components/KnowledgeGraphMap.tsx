@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 
 import {
@@ -26,6 +26,7 @@ export function KnowledgeGraphMap({
   selectedId,
   onSelect,
 }: KnowledgeGraphMapProps) {
+  const [focusedId, setFocusedId] = useState('');
   const points = useMemo(
     () => layoutKnowledgeGraph(snapshot.nodes, snapshot.edges),
     [snapshot],
@@ -105,6 +106,8 @@ export function KnowledgeGraphMap({
               aria-label={`${node.label}, ${Math.round(node.signal * 100)} percent knowledge signal, ${node.state.replace('_', ' ')}`}
               aria-pressed={selected}
               onClick={() => onSelect(node)}
+              onFocus={() => setFocusedId(node.id)}
+              onBlur={() => setFocusedId('')}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
                   event.preventDefault();
@@ -125,14 +128,14 @@ export function KnowledgeGraphMap({
                   opacity="0.55"
                 />
               )}
-              {selected && (
+              {(selected || focusedId === node.id) && (
                 <circle
                   cx={point.x}
                   cy={point.y}
                   r={radius + 7}
                   fill="none"
                   stroke="#242622"
-                  strokeWidth="3"
+                  strokeWidth={focusedId === node.id ? 4 : 3}
                 />
               )}
               <circle
