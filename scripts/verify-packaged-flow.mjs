@@ -223,14 +223,17 @@ try {
     assert.deepEqual(cdp.consoleProblems, []);
     console.log('Verified normal packaged onboarding with a fresh profile.');
   } else {
-    await waitFor(bodyIncludes('What should we learn?'), 'configured home');
+    await waitFor(
+      bodyIncludes('Find the edge of what you know.'),
+      'configured home',
+    );
     let active = await activeElement();
     assert.equal(active.tag, 'INPUT');
     assert.match(active.label, /Topic/u);
 
     await setField('Topic or question', 'Database indexes');
     await waitFor(
-      `[...document.querySelectorAll('button')].some((item) => item.textContent.includes('Start session') && !item.disabled)`,
+      `[...document.querySelectorAll('button')].some((item) => item.textContent.includes('Start diagnostic') && !item.disabled)`,
       'enabled keyboard submission',
     );
     await cdp.send('Input.dispatchKeyEvent', {
@@ -261,33 +264,35 @@ try {
       'diagnostic question',
     );
 
-    await clickButton('Rephrase the question · uses AI');
+    await clickButton('Rephrase it · uses AI');
     await waitFor(
       bodyIncludes('What lets a database narrow the rows it checks?'),
       'graduated help',
     );
 
     const answer = 'Indexes avoid scanning every row.';
-    await setField('Your answer', answer);
-    await clickButton('Check answer · uses AI');
+    await setField('Your explanation', answer);
+    await clickButton('Check my thinking · uses AI');
     await waitFor(bodyIncludes('Try again · uses AI'), 'planned retry state');
     assert.equal(
-      await cdp.evaluate(fieldExpression('Your answer', 'return field.value;')),
+      await cdp.evaluate(
+        fieldExpression('Your explanation', 'return field.value;'),
+      ),
       answer,
     );
     await clickButton('Try again · uses AI');
-    await waitFor(bodyIncludes('Provisional evaluation: Partial'), 'feedback');
+    await waitFor(bodyIncludes('You have the shape of it.'), 'feedback');
     active = await activeElement();
     assert.equal(active.id, 'feedback-heading');
 
     await cdp.send('Page.reload', { ignoreCache: true });
     await waitFor(
-      bodyIncludes('Active · 1 answered · 1 partial'),
+      bodyIncludes('In progress · 1 answered · 1 developing'),
       'pending session history',
     );
     await clickButton('Continue');
     await waitFor(
-      bodyIncludes('Provisional evaluation: Partial'),
+      bodyIncludes('You have the shape of it.'),
       'persisted pending feedback',
     );
     active = await activeElement();
@@ -304,14 +309,14 @@ try {
     );
     assert.ok((await activeElement()).id === 'feedback-heading');
 
-    await clickButton('End');
+    await clickButton('Finish session');
     await waitFor(bodyIncludes('SESSION COMPLETE'), 'session summary');
     active = await activeElement();
     assert.equal(active.tag, 'H1');
     assert.equal(active.text, 'Database indexes');
 
     await clickButton('Start a new topic');
-    await waitFor(bodyIncludes('RECENT SESSIONS'), 'history home');
+    await waitFor(bodyIncludes('Continue learning'), 'history home');
     assert.equal(await cdp.evaluate(bodyIncludes('Database indexes')), true);
     await clickButton('Delete Database indexes session');
     await waitFor(bodyIncludes('Delete this local session?'), 'delete dialog');

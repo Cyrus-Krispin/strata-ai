@@ -2,7 +2,6 @@ import { useEffect, useReducer, useRef, useState } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import LinearProgress from '@mui/material/LinearProgress';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
@@ -34,7 +33,7 @@ type ProviderState = ProviderStatus & {
 };
 
 const centeredStateSx: SxProps<Theme> = {
-  minHeight: 'calc(100vh - 4rem)',
+  minHeight: 'calc(100vh - 4.5rem)',
   px: { xs: 2.5, sm: 6 },
   py: 6,
   display: 'flex',
@@ -45,8 +44,8 @@ const centeredStateSx: SxProps<Theme> = {
 };
 
 const displayHeadingSx: SxProps<Theme> = {
-  maxWidth: '14ch',
-  fontSize: { xs: '2.5rem', sm: 'clamp(2.75rem, 5vw, 4.5rem)' },
+  maxWidth: '16ch',
+  fontSize: { xs: '2.6rem', sm: 'clamp(3rem, 5vw, 4.5rem)' },
   lineHeight: 1,
 };
 
@@ -483,27 +482,69 @@ export function App() {
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
       <AppBar
         component="header"
-        position="static"
+        position="sticky"
         color="transparent"
         elevation={0}
+        sx={{
+          bgcolor: 'rgba(242, 240, 232, 0.94)',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          backdropFilter: 'blur(12px)',
+        }}
       >
         <Toolbar
           sx={{
-            minHeight: '4rem',
-            px: { xs: 2, sm: 3 },
+            minHeight: '4.5rem',
+            px: { xs: 2, sm: 4 },
             justifyContent: 'space-between',
+            gap: 2,
           }}
         >
-          <IconButton
+          <Button
             color="inherit"
             onClick={returnHome}
             aria-label="Return to Strata AI home"
-            size="small"
             disabled={operationBusy}
-            sx={{ p: 0.75 }}
+            sx={{ minWidth: 0, px: 0.5, gap: 1.25 }}
           >
             <StrataAiMark />
-          </IconButton>
+            <Typography
+              component="span"
+              sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}
+            >
+              Strata
+            </Typography>
+          </Button>
+          {sessionIsActive && !showProviderSettings && (
+            <Box
+              sx={{
+                display: { xs: 'none', sm: 'flex' },
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  bgcolor: 'secondary.main',
+                }}
+              />
+              <Typography
+                color="text.secondary"
+                sx={{
+                  maxWidth: '34vw',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  fontSize: '0.78rem',
+                }}
+              >
+                {session.topic} · Question {session.turn}
+              </Typography>
+            </Box>
+          )}
           <Box>
             {showProviderSettings ? (
               <Button
@@ -537,12 +578,12 @@ export function App() {
                 disabled={operationBusy}
                 sx={{
                   minWidth: 0,
-                  p: 0.5,
+                  px: 1,
                   color: 'text.secondary',
                   fontSize: '0.8rem',
                 }}
               >
-                End
+                Finish session
               </Button>
             )}
           </Box>
@@ -620,12 +661,19 @@ export function App() {
           <Typography
             variant="overline"
             color="primary.main"
-            sx={{ fontWeight: 750 }}
+            sx={{ fontWeight: 800, letterSpacing: '0.14em' }}
           >
             {session.topic}
           </Typography>
           <Typography component="h1" variant="h1" sx={displayHeadingSx}>
-            Thinking…
+            Finding the right first question…
+          </Typography>
+          <Typography
+            color="text.secondary"
+            sx={{ maxWidth: '30rem', mt: 2, lineHeight: 1.6 }}
+          >
+            Strata is choosing a question that reveals what you already
+            understand and where to go next.
           </Typography>
           <LinearProgress
             aria-hidden="true"

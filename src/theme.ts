@@ -4,27 +4,28 @@ export const strataAiTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#242622',
-      contrastText: '#f7f6f1',
+      main: '#174C43',
+      dark: '#103A34',
+      contrastText: '#FFFDF7',
     },
     secondary: {
-      main: '#5f625c',
+      main: '#C86F3D',
     },
     error: {
-      main: '#9a3f32',
+      main: '#A54335',
     },
     background: {
-      default: '#f7f6f1',
-      paper: '#f7f6f1',
+      default: '#F2F0E8',
+      paper: '#FFFDF7',
     },
     text: {
-      primary: '#242622',
-      secondary: '#6f716b',
+      primary: '#1D2925',
+      secondary: '#61706A',
     },
-    divider: '#deddd7',
+    divider: '#D8D8CE',
   },
   shape: {
-    borderRadius: 8,
+    borderRadius: 12,
   },
   typography: {
     fontFamily:
@@ -36,12 +37,16 @@ export const strataAiTheme = createTheme({
       textTransform: 'none',
     },
     h1: {
-      fontWeight: 500,
-      letterSpacing: '-0.045em',
+      fontFamily:
+        '"Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif',
+      fontWeight: 600,
+      letterSpacing: '-0.035em',
     },
     h2: {
-      fontWeight: 500,
-      letterSpacing: '-0.035em',
+      fontFamily:
+        '"Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif',
+      fontWeight: 600,
+      letterSpacing: '-0.025em',
     },
   },
   components: {
@@ -53,6 +58,8 @@ export const strataAiTheme = createTheme({
         body: {
           minWidth: 320,
           minHeight: '100vh',
+          margin: 0,
+          backgroundColor: '#F2F0E8',
         },
         '#root': {
           minHeight: '100vh',
@@ -62,6 +69,34 @@ export const strataAiTheme = createTheme({
     MuiButton: {
       defaultProps: {
         disableElevation: true,
+      },
+      styleOverrides: {
+        root: {
+          minHeight: 42,
+          borderRadius: 9,
+          paddingInline: 18,
+        },
+        contained: {
+          boxShadow: 'none',
+        },
+      },
+    },
+    MuiTextField: {
+      defaultProps: {
+        variant: 'outlined',
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#FFFDF7',
+          '&:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: '#8B9993',
+          },
+        },
+        notchedOutline: {
+          borderColor: '#C8CCC5',
+        },
       },
     },
     MuiPaper: {
