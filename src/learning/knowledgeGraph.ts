@@ -3,10 +3,7 @@ import type { EvaluationResult } from './contracts.ts';
 export type ConceptAssessment =
   EvaluationResult['concepts'][number]['assessment'];
 export type KnowledgeSignalState =
-  | 'strong'
-  | 'developing'
-  | 'fragile'
-  | 'needs_attention';
+  'strong' | 'developing' | 'fragile' | 'needs_attention';
 export type KnowledgeTrend = 'improving' | 'steady' | 'slipping';
 
 export type KnowledgeSignalEvidence = {
@@ -61,6 +58,12 @@ export type KnowledgeGraphSnapshot = {
   };
 };
 
+export type KnowledgeGraphPoint = {
+  id: string;
+  x: number;
+  y: number;
+};
+
 const statusValue: Record<ConceptAssessment, number> = {
   demonstrated: 0.9,
   partial: 0.58,
@@ -68,10 +71,7 @@ const statusValue: Record<ConceptAssessment, number> = {
   misconception: 0.14,
 };
 
-const uncertaintyWeight: Record<
-  EvaluationResult['uncertainty'],
-  number
-> = {
+const uncertaintyWeight: Record<EvaluationResult['uncertainty'], number> = {
   low: 1,
   medium: 0.78,
   high: 0.55,
@@ -137,4 +137,84 @@ export function scoreKnowledgeSignal(
     state: stateForScore(score),
     trend,
   };
+}
+
+export function layoutKnowledgeGraph(
+  nodes: KnowledgeGraphNode[],
+  edges: KnowledgeGraphEdge[],
+): KnowledgeGraphPoint[] {
+  const width = 900;
+  const height = 560;
+  const ordered = [...nodes].sort((left, right) =>
+    left.label.localeCompare(right.label),
+  );
+  const positions = new Map<string, { x: number; y: number }>(
+    ordered.map((node, index): [string, { x: number; y: number }] => {
+      const angle = index * 2.399963;
+      const radius = 36 + Math.sqrt(index) * 72;
+      return [
+        node.id,
+        {
+          x: width / 2 + Math.cos(angle) * radius,
+          y: height / 2 + Math.sin(angle) * radius * 0.72,
+        },
+      ];
+    }),
+  );
+
+  for (let iteration = 0; iteration < 70; iteration += 1) {
+    const movement = new Map(ordered.map((node) => [node.id, { x: 0, y: 0 }]));
+    for (let leftIndex = 0; leftIndex < ordered.length; leftIndex += 1) {
+      for (
+        let rightIndex = leftIndex + 1;
+        rightIndex < ordered.length;
+        rightIndex += 1
+      ) {
+        const left = positions.get(ordered[leftIndex].id)!;
+        const right = positions.get(ordered[rightIndex].id)!;
+        const dx = left.x - right.x;
+        const dy = left.y - right.y;
+        const distanceSquared = Math.max(900, dx * dx + dy * dy);
+        const force = 5_200 / distanceSquared;
+        movement.get(ordered[leftIndex].id)!.x += dx * force;
+        movement.get(ordered[leftIndex].id)!.y += dy * force;
+        movement.get(ordered[rightIndex].id)!.x -= dx * force;
+        movement.get(ordered[rightIndex].id)!.y -= dy * force;
+      }
+    }
+    for (const edge of edges) {
+      const source = positions.get(edge.source);
+      const target = positions.get(edge.target);
+      if (!source || !target) continue;
+      const dx = target.x - source.x;
+      const dy = target.y - source.y;
+      const distance = Math.max(1, Math.hypot(dx, dy));
+      const force = (distance - 170) * 0.0023 * edge.strength;
+      movement.get(edge.source)!.x += dx * force;
+      movement.get(edge.source)!.y += dy * force;
+      movement.get(edge.target)!.x -= dx * force;
+      movement.get(edge.target)!.y -= dy * force;
+    }
+    for (const node of ordered) {
+      const point = positions.get(node.id)!;
+      const delta = movement.get(node.id)!;
+      point.x = Math.min(
+        width - 50,
+        Math.max(50, point.x + delta.x + (width / 2 - point.x) * 0.006),
+      );
+      point.y = Math.min(
+        height - 50,
+        Math.max(50, point.y + delta.y + (height / 2 - point.y) * 0.006),
+      );
+    }
+  }
+
+  return ordered.map((node) => {
+    const point = positions.get(node.id)!;
+    return {
+      id: node.id,
+      x: Number(point.x.toFixed(2)),
+      y: Number(point.y.toFixed(2)),
+    };
+  });
 }
