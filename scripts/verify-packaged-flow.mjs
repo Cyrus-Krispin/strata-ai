@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -10,6 +10,9 @@ if (process.platform !== 'darwin') {
 }
 
 const onboardingOnly = process.argv.includes('--onboarding');
+const screenshotDirectory = process.env.STRATA_SCREENSHOT_DIR
+  ? resolve(process.env.STRATA_SCREENSHOT_DIR)
+  : null;
 assert.equal(
   process.arch,
   'arm64',
@@ -140,6 +143,23 @@ class CdpClient {
     return result.result.value;
   }
 
+  async captureScreenshot(name) {
+    if (!screenshotDirectory) return;
+    await mkdir(screenshotDirectory, { recursive: true });
+    const metrics = await this.send('Page.getLayoutMetrics');
+    const { width, height } = metrics.cssContentSize;
+    const result = await this.send('Page.captureScreenshot', {
+      format: 'png',
+      fromSurface: true,
+      captureBeyondViewport: true,
+      clip: { x: 0, y: 0, width, height, scale: 1 },
+    });
+    await writeFile(
+      join(screenshotDirectory, `${name}.png`),
+      Buffer.from(result.data, 'base64'),
+    );
+  }
+
   close() {
     this.socket.close();
   }
@@ -216,6 +236,7 @@ try {
 
   if (onboardingOnly) {
     await waitFor(bodyIncludes('First, connect DeepSeek.'), 'fresh onboarding');
+    await cdp.captureScreenshot('01-onboarding');
     const active = await activeElement();
     assert.equal(active.tag, 'INPUT');
     assert.match(active.label, /DeepSeek API key/u);
@@ -227,6 +248,7 @@ try {
       bodyIncludes('Find the edge of what you know.'),
       'configured home',
     );
+    await cdp.captureScreenshot('02-home');
     let active = await activeElement();
     assert.equal(active.tag, 'INPUT');
     assert.match(active.label, /Topic/u);
@@ -263,12 +285,14 @@ try {
       bodyIncludes('Why can an index avoid scanning every row?'),
       'diagnostic question',
     );
+    await cdp.captureScreenshot('03-question');
 
     await clickButton('Rephrase it · uses AI');
     await waitFor(
       bodyIncludes('What lets a database narrow the rows it checks?'),
       'graduated help',
     );
+    await cdp.captureScreenshot('04-graduated-help');
 
     const answer = 'Indexes avoid scanning every row.';
     await setField('Your explanation', answer);
@@ -282,6 +306,7 @@ try {
     );
     await clickButton('Try again · uses AI');
     await waitFor(bodyIncludes('You have the shape of it.'), 'feedback');
+    await cdp.captureScreenshot('05-feedback');
     active = await activeElement();
     assert.equal(active.id, 'feedback-heading');
 
@@ -307,16 +332,21 @@ try {
       bodyIncludes('Evaluation history · 2 revisions'),
       'challenge revision',
     );
+    await clickButton('Evaluation history');
+    await new Promise((resolveWait) => setTimeout(resolveWait, 300));
+    await cdp.captureScreenshot('06-evaluation-history');
     assert.ok((await activeElement()).id === 'feedback-heading');
 
     await clickButton('Finish session');
     await waitFor(bodyIncludes('SESSION COMPLETE'), 'session summary');
+    await cdp.captureScreenshot('07-session-summary');
     active = await activeElement();
     assert.equal(active.tag, 'H1');
     assert.equal(active.text, 'Database indexes');
 
     await clickButton('Start a new topic');
     await waitFor(bodyIncludes('Continue learning'), 'history home');
+    await cdp.captureScreenshot('08-session-history');
     assert.equal(await cdp.evaluate(bodyIncludes('Database indexes')), true);
     await clickButton('Delete Database indexes session');
     await waitFor(bodyIncludes('Delete this local session?'), 'delete dialog');
