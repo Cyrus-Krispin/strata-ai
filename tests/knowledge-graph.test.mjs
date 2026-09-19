@@ -150,6 +150,11 @@ test('grows concepts and explainable relationships from evaluated attempts', () 
     'avoid scanning every row',
   );
   assert.equal(snapshot.frontier.conceptId.length > 0, true);
+
+  const bounded = graph.getSnapshot({ limit: 1 });
+  assert.equal(bounded.nodes.length, 1);
+  assert.equal(bounded.stats.concepts, 2);
+  assert.equal(bounded.stats.observations, 2);
   database.close();
 });
 

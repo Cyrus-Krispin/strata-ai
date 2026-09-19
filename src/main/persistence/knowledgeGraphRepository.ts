@@ -39,6 +39,12 @@ type EdgeRow = {
   session_count: number;
 };
 
+type GraphStatsRow = {
+  concepts: number;
+  observations: number;
+  sessions: number;
+};
+
 export class KnowledgeGraphRepository {
   private readonly database: DatabaseSync;
 
@@ -136,18 +142,21 @@ export class KnowledgeGraphRepository {
   ): KnowledgeGraphSnapshot {
     const now = options.now ?? new Date();
     const limit = Math.max(1, Math.min(options.limit ?? 80, 120));
-    const evidenceRows = this.database
-      .prepare(
-        `SELECT ce.concept_id, c.display_name, ce.session_id, ce.question_id,
+    const evidenceRows = (
+      this.database
+        .prepare(
+          `SELECT ce.concept_id, c.display_name, ce.session_id, ce.question_id,
                 s.topic, q.prompt AS question, ce.status, ce.uncertainty,
                 ce.evidence_excerpt, ce.observed_at
          FROM concept_evidence ce
          JOIN concepts c ON c.id = ce.concept_id
          JOIN learning_sessions s ON s.id = ce.session_id
          JOIN questions q ON q.id = ce.question_id
-         ORDER BY ce.observed_at ASC`,
-      )
-      .all() as EvidenceRow[];
+         ORDER BY ce.observed_at DESC
+         LIMIT ?`,
+        )
+        .all(limit * 50) as EvidenceRow[]
+    ).reverse();
 
     const grouped = new Map<string, EvidenceRow[]>();
     for (const row of evidenceRows) {
@@ -198,15 +207,24 @@ export class KnowledgeGraphRepository {
       )
       .slice(0, limit);
     const visibleIds = new Set(nodes.map((node) => node.id));
-    const edgeRows = this.database
-      .prepare(
-        `SELECT source_concept_id, target_concept_id,
+    const placeholders = nodes.map(() => '?').join(', ');
+    const edgeRows =
+      nodes.length === 0
+        ? []
+        : (this.database
+            .prepare(
+              `SELECT source_concept_id, target_concept_id,
                 COUNT(*) AS evidence_count,
                 COUNT(DISTINCT session_id) AS session_count
          FROM concept_edges
+         WHERE source_concept_id IN (${placeholders})
+           AND target_concept_id IN (${placeholders})
          GROUP BY source_concept_id, target_concept_id`,
-      )
-      .all() as EdgeRow[];
+            )
+            .all(
+              ...nodes.map((node) => node.id),
+              ...nodes.map((node) => node.id),
+            ) as EdgeRow[]);
     const edges: KnowledgeGraphEdge[] = edgeRows
       .filter(
         (row) =>
@@ -228,16 +246,25 @@ export class KnowledgeGraphRepository {
         ),
       }));
 
+    const stats = this.database
+      .prepare(
+        `SELECT COUNT(DISTINCT concept_id) AS concepts,
+                COUNT(*) AS observations,
+                COUNT(DISTINCT session_id) AS sessions
+         FROM concept_evidence`,
+      )
+      .get() as GraphStatsRow;
+
     return {
       generatedAt: now.toISOString(),
       nodes,
       edges,
       frontier: this.findFrontier(nodes, edges),
       stats: {
-        concepts: nodes.length,
+        concepts: stats.concepts,
         connections: edges.length,
-        observations: evidenceRows.length,
-        sessions: new Set(evidenceRows.map((row) => row.session_id)).size,
+        observations: stats.observations,
+        sessions: stats.sessions,
       },
     };
   }
