@@ -16,6 +16,8 @@ import {
   toLocalDataSession,
   type LocalDataSession,
 } from '../../learning/localData.ts';
+import type { KnowledgeGraphSnapshot } from '../../learning/knowledgeGraph.ts';
+import { KnowledgeGraphRepository } from './knowledgeGraphRepository.ts';
 
 type RepositoryOptions = {
   createId?: () => string;
@@ -90,11 +92,13 @@ export class LearningSessionRepository {
   private readonly database: DatabaseSync;
   private readonly createId: () => string;
   private readonly now: () => string;
+  private readonly knowledgeGraph: KnowledgeGraphRepository;
 
   constructor(database: DatabaseSync, options: RepositoryOptions = {}) {
     this.database = database;
     this.createId = options.createId ?? randomUUID;
     this.now = options.now ?? (() => new Date().toISOString());
+    this.knowledgeGraph = new KnowledgeGraphRepository(database);
   }
 
   createSession(
@@ -236,6 +240,13 @@ export class LearningSessionRepository {
           evidence.finding,
         );
       });
+      this.knowledgeGraph.replaceQuestionEvidence({
+        sessionId: input.sessionId,
+        questionId: input.questionId,
+        evaluationId,
+        evaluation: input.evaluation,
+        observedAt: timestamp,
+      });
       this.database
         .prepare(
           `INSERT INTO questions
@@ -372,6 +383,13 @@ export class LearningSessionRepository {
           item.finding,
         ),
       );
+      this.knowledgeGraph.replaceQuestionEvidence({
+        sessionId: input.sessionId,
+        questionId: input.questionId,
+        evaluationId,
+        evaluation: input.evaluation,
+        observedAt: timestamp,
+      });
       this.database
         .prepare(
           `INSERT INTO evaluation_challenges
@@ -567,11 +585,18 @@ export class LearningSessionRepository {
     return { imported: pending.length, skipped };
   }
 
+  getKnowledgeGraph(limit: number): KnowledgeGraphSnapshot {
+    return this.knowledgeGraph.getSnapshot({ limit });
+  }
+
   deleteSession(sessionId: string): boolean {
-    const result = this.database
-      .prepare('DELETE FROM learning_sessions WHERE id = ?')
-      .run(sessionId);
-    return result.changes === 1;
+    return this.transaction(() => {
+      const result = this.database
+        .prepare('DELETE FROM learning_sessions WHERE id = ?')
+        .run(sessionId);
+      if (result.changes === 1) this.knowledgeGraph.pruneOrphanedConcepts();
+      return result.changes === 1;
+    });
   }
 
   private getSessionRow(sessionId: string): SessionRow | null {
@@ -706,6 +731,14 @@ export class LearningSessionRepository {
             );
         }
       }
+      const latestRevision = turn.evaluationHistory.at(-1)!;
+      this.knowledgeGraph.replaceQuestionEvidence({
+        sessionId: session.id,
+        questionId: turn.questionId,
+        evaluationId: latestRevision.id,
+        evaluation: latestRevision.evaluation,
+        observedAt: latestRevision.createdAt,
+      });
     }
 
     session.turns.slice(1).forEach((turn, index) => {
@@ -751,6 +784,7 @@ export class LearningSessionRepository {
       evaluation = {
         status: row.status!,
         evidence,
+        concepts: this.getConceptAnnotations(row.evaluation_id, evidence),
         unresolvedGap: row.unresolved_gap!,
         uncertainty: row.uncertainty!,
         proposedNextMove: row.proposed_next_move!,
@@ -823,6 +857,7 @@ export class LearningSessionRepository {
     return {
       status: row.status!,
       evidence,
+      concepts: this.getConceptAnnotations(row.evaluation_id!, evidence),
       unresolvedGap: row.unresolved_gap!,
       uncertainty: row.uncertainty!,
       proposedNextMove: row.proposed_next_move!,
@@ -831,11 +866,40 @@ export class LearningSessionRepository {
     };
   }
 
-  private transaction(work: () => void): void {
+  private getConceptAnnotations(
+    evaluationId: string,
+    evidence: EvaluationResult['evidence'],
+  ): EvaluationResult['concepts'] {
+    const rows = this.database
+      .prepare(
+        `SELECT c.display_name AS name, ce.status AS assessment,
+                ce.evidence_excerpt
+         FROM concept_evidence ce
+         JOIN concepts c ON c.id = ce.concept_id
+         WHERE ce.evaluation_id = ?
+         ORDER BY c.display_name ASC`,
+      )
+      .all(evaluationId) as Array<{
+      name: string;
+      assessment: EvaluationResult['concepts'][number]['assessment'];
+      evidence_excerpt: string;
+    }>;
+    return rows.map((row) => ({
+      name: row.name,
+      assessment: row.assessment,
+      evidenceOrdinal: Math.max(
+        0,
+        evidence.findIndex((item) => item.excerpt === row.evidence_excerpt),
+      ),
+    }));
+  }
+
+  private transaction<T>(work: () => T): T {
     this.database.exec('BEGIN IMMEDIATE');
     try {
-      work();
+      const result = work();
       this.database.exec('COMMIT');
+      return result;
     } catch (error) {
       this.database.exec('ROLLBACK');
       throw error;

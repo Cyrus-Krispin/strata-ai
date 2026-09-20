@@ -65,6 +65,13 @@ test('accepts evidence quoted exactly from the learner answer', () => {
           finding: 'Correctly connects the gradient to the update direction.',
         },
       ],
+      concepts: [
+        {
+          name: 'Gradient direction',
+          assessment: 'partial',
+          evidenceOrdinal: 0,
+        },
+      ],
       unresolvedGap: 'The role of gradient magnitude is not explained.',
       uncertainty: 'low',
       proposedNextMove: 'probe',
@@ -94,6 +101,13 @@ test('rejects evidence fabricated by the model', () => {
               finding: 'Explains the update direction.',
             },
           ],
+          concepts: [
+            {
+              name: 'Gradient direction',
+              assessment: 'demonstrated',
+              evidenceOrdinal: 0,
+            },
+          ],
           unresolvedGap: 'No major gap identified.',
           uncertainty: 'low',
           proposedNextMove: 'advance',
@@ -119,6 +133,13 @@ test('rejects a verbose next question', () => {
             finding: 'Identifies that training updates model weights.',
           },
         ],
+        concepts: [
+          {
+            name: 'Parameter updates',
+            assessment: 'partial',
+            evidenceOrdinal: 0,
+          },
+        ],
         unresolvedGap: 'The update direction is not explained.',
         uncertainty: 'low',
         proposedNextMove: 'probe',
@@ -142,6 +163,13 @@ test('rejects a response with more than the allowed fields', () => {
           {
             excerpt: 'Loss measures the error',
             finding: 'Identifies the purpose of loss.',
+          },
+        ],
+        concepts: [
+          {
+            name: 'Loss functions',
+            assessment: 'partial',
+            evidenceOrdinal: 0,
           },
         ],
         unresolvedGap: 'The answer does not connect loss to learning.',

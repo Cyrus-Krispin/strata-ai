@@ -19,6 +19,13 @@ const evaluation = {
       finding: 'Connects loss to an optimization target.',
     },
   ],
+  concepts: [
+    {
+      name: 'Loss functions',
+      assessment: 'partial',
+      evidenceOrdinal: 0,
+    },
+  ],
   unresolvedGap: 'The answer does not connect loss to parameter updates.',
   uncertainty: 'low',
   proposedNextMove: 'probe',

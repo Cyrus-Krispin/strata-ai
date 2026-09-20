@@ -18,6 +18,7 @@ import started from 'electron-squirrel-startup';
 import {
   parseListSessionsRequest,
   parseFeedbackAcknowledgementRequest,
+  parseKnowledgeGraphRequest,
   parseHelpRequest,
   parseChallengeRequest,
   parseSessionRequest,
@@ -146,6 +147,14 @@ function registerLearningHandlers(
     return learningResult(() => {
       const request = parseListSessionsRequest(value);
       return service.listSessions(request.limit);
+    });
+  });
+
+  ipcMain.handle('learning:knowledge-graph', (event, value) => {
+    assertTrustedRenderer(event);
+    return learningResult(() => {
+      const request = parseKnowledgeGraphRequest(value);
+      return service.getKnowledgeGraph(request.limit);
     });
   });
 

@@ -35,6 +35,8 @@ type StartViewProps = {
   sessions: LearningSessionSummary[];
   historyLoading: boolean;
   historyError: string;
+  graphConceptCount: number;
+  graphLoading: boolean;
   onStart(topic: string): Promise<void>;
   onOpenSession(sessionId: string): Promise<void>;
   onRetryHistory(): Promise<void>;
@@ -48,6 +50,7 @@ type StartViewProps = {
   onRestoreLearningData(): Promise<
     LocalDataOperationResult<RestoreLearningDataResult>
   >;
+  onOpenKnowledgeGraph(): void;
   providerSettingsInitiallyExpanded?: boolean;
 };
 
@@ -59,6 +62,8 @@ export function StartView({
   sessions,
   historyLoading,
   historyError,
+  graphConceptCount,
+  graphLoading,
   onStart,
   onOpenSession,
   onRetryHistory,
@@ -68,6 +73,7 @@ export function StartView({
   onOpenDeepSeekKeys,
   onExportLearningData,
   onRestoreLearningData,
+  onOpenKnowledgeGraph,
   providerSettingsInitiallyExpanded = false,
 }: StartViewProps) {
   const [topic, setTopic] = useState('');
@@ -293,6 +299,42 @@ export function StartView({
             onOpenDeepSeekKeys={onOpenDeepSeekKeys}
           />
         )}
+        <Box
+          sx={{
+            mt: 5,
+            py: 2.5,
+            borderTop: '1px solid',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 3,
+          }}
+        >
+          <Box>
+            <Typography sx={{ fontWeight: 700 }}>Knowledge map</Typography>
+            <Typography
+              color="text.secondary"
+              sx={{ mt: 0.25, fontSize: '0.78rem' }}
+            >
+              {graphLoading
+                ? 'Tracing your evidence…'
+                : graphConceptCount > 0
+                  ? `${graphConceptCount} evidence-backed concepts are taking shape.`
+                  : 'A living map that grows from what you can explain.'}
+            </Typography>
+          </Box>
+          <Button
+            variant="outlined"
+            color="inherit"
+            type="button"
+            onClick={onOpenKnowledgeGraph}
+            sx={{ flexShrink: 0 }}
+          >
+            Open map
+          </Button>
+        </Box>
         <SessionHistory
           sessions={sessions}
           loading={historyLoading}

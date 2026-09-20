@@ -1,6 +1,6 @@
 # Strata AI Product Direction
 
-Status: Accepted direction; the first AI learning loop is implemented for validation
+Status: Accepted direction; adaptive loop and first evidence graph implemented
 
 ## Thesis
 
@@ -35,9 +35,14 @@ The learner can request help through a controlled ladder: rephrase the question,
 - **General chatbot:** open-ended conversation makes it too easy for the model to lecture, complete the work, or imply mastery.
 - **Knowledge graph as the initial UI:** the graph should emerge from evidence over time and serve learning decisions, not become decorative organization.
 
-## Long-Term Shape
+## Emerging Long-Term Shape
 
 Each answer can create evidence about concepts, relationships, misconceptions, and prerequisites. Over time, Strata AI can build a learner-specific evidence graph that supports retention reviews, topic audits, and recommendations at the learning frontier. Early versions can model this with ordinary relational tables; a graph database is not required.
+
+The first slice now records concept-specific evidence, repeated co-occurrence,
+time-aware knowledge signals, and an explainable frontier in ordinary SQLite.
+Prerequisite meaning remains deliberately unclaimed until stronger evidence or
+learner confirmation exists.
 
 ## Guardrails
 

@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   parseListSessionsRequest,
   parseProviderCredentialRequest,
+  parseKnowledgeGraphRequest,
   parseHelpRequest,
   parseChallengeRequest,
   parseSessionRequest,
@@ -54,6 +55,8 @@ test('accepts bounded persisted-session requests', () => {
   );
   assert.deepEqual(parseListSessionsRequest({}), { limit: 20 });
   assert.deepEqual(parseListSessionsRequest({ limit: 7 }), { limit: 7 });
+  assert.deepEqual(parseKnowledgeGraphRequest({}), { limit: 80 });
+  assert.deepEqual(parseKnowledgeGraphRequest({ limit: 24 }), { limit: 24 });
   const requestId = '00000000-0000-4000-8000-000000000003';
   assert.equal(
     parseHelpRequest({ requestId, sessionId, questionId, level: 'rephrase' })
@@ -75,6 +78,7 @@ test('accepts bounded persisted-session requests', () => {
 test('rejects unbounded or malformed persisted-session requests', () => {
   assert.throws(() => parseSessionRequest({ sessionId: 'not-a-uuid' }));
   assert.throws(() => parseListSessionsRequest({ limit: 1000 }));
+  assert.throws(() => parseKnowledgeGraphRequest({ limit: 121 }));
   assert.throws(() =>
     parseSubmitAttemptRequest({
       sessionId: '00000000-0000-4000-8000-000000000001',

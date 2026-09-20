@@ -50,13 +50,13 @@ The first product milestone validates one adaptive learning loop:
 7. The session ends with a short evidence summary and unresolved questions.
 8. Sessions and attempts persist locally so the learner can resume and revisit them.
 
-## Not Doing in the MVP
+## Not Doing in the Original MVP
 
 - A note editor or document-management system
 - A general-purpose chatbot or AI lecturer
 - Voice answers or transcription
 - Uploaded or automatically captured source material
-- A graph visualization or graph database
+- A graph database or manually curated graph editor
 - Automatic curriculum completion or mastery percentages
 - Full flashcard scheduling or spaced-repetition algorithms
 - Cloud accounts, multi-device sync, or collaboration
@@ -125,6 +125,15 @@ Model output is untrusted input. Validate it before storage or display, and pres
 - The next question changes meaningfully in response to strong, partial, and mistaken answers.
 - A learner can end and later inspect a locally stored session summary.
 - Qualitative testing shows the loop uncovers gaps that a conventional explanatory chat leaves hidden.
+
+## Longitudinal Evidence Slice
+
+Evaluated answers now contribute one to four validated concepts, each tied to
+an exact learner quote. The local knowledge map combines repeated observations,
+uncertainty, and evidence age into a visible knowledge signal. It highlights a
+learning frontier without claiming objective mastery. Relationships currently
+represent repeated concept co-occurrence; semantic prerequisites remain
+deferred until they can be learner-confirmed or otherwise grounded.
 
 ## Open Questions
 

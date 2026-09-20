@@ -9,6 +9,11 @@ persist locally in SQLite and can be resumed, reviewed, ended, or deleted.
 Learners can request progressively stronger help and challenge a model judgment;
 both histories remain attributable and survive restart.
 
+Every evaluated answer also grows a local, evidence-backed knowledge graph.
+Concept signals account for uncertainty and age, repeated relationships
+strengthen across sessions, and an explainable learning frontier highlights the
+most useful concept to revisit next.
+
 ## Private alpha requirements
 
 - macOS 13 Ventura or later on an Apple Silicon Mac
@@ -96,6 +101,7 @@ guide.
 - [Changelog](CHANGELOG.md)
 - [Local session persistence](docs/local-session-persistence.md)
 - [Proposed adaptive learning controls](docs/adaptive-learning-controls.md)
+- [Self-growing knowledge graph](docs/self-growing-knowledge-graph.md)
 - [Implementation plan](tasks/plan.md)
 - [Task checklist](tasks/todo.md)
 
@@ -106,7 +112,9 @@ guide.
 - Session history is stored locally in Electron's per-user application-data
   directory and remains available after an app restart
 - Versioned learning backups can be exported and restored; there is no automatic
-  backup, cloud sync, or knowledge graph
+  backup or cloud sync
+- Graph relationships currently mean observed co-occurrence, not inferred
+  prerequisite or causal truth
 - No accounts, cloud backend, or synchronization
 - Local secrets remain ignored; a key is transiently entered in the trusted renderer,
   sent once over validated IPC, and only encrypted data is persisted

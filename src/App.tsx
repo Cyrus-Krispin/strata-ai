@@ -8,6 +8,7 @@ import Typography from '@mui/material/Typography';
 import type { SxProps, Theme } from '@mui/material/styles';
 
 import { FeedbackView } from './components/FeedbackView';
+import { KnowledgeGraphView } from './components/KnowledgeGraphView';
 import { QuestionView } from './components/QuestionView';
 import { ProviderSettings } from './components/ProviderSettings';
 import { SessionReview } from './components/SessionReview';
@@ -18,6 +19,7 @@ import {
   learningSessionReducer,
 } from './learning/session.ts';
 import type { LearningSessionSummary } from './learning/history.ts';
+import type { KnowledgeGraphSnapshot } from './learning/knowledgeGraph.ts';
 import type { HelpLevel } from './learning/contracts.ts';
 import type { LearningError, ProviderStatus } from './learning/ipc.ts';
 import { deleteLocalSession } from './learning/historyOperations.ts';
@@ -67,6 +69,11 @@ export function App() {
   >([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState('');
+  const [knowledgeGraph, setKnowledgeGraph] =
+    useState<KnowledgeGraphSnapshot | null>(null);
+  const [graphLoading, setGraphLoading] = useState(true);
+  const [graphError, setGraphError] = useState('');
+  const [showKnowledgeGraph, setShowKnowledgeGraph] = useState(false);
   const [localError, setLocalError] = useState('');
   const [providerBusy, setProviderBusy] = useState(false);
   const [providerError, setProviderError] = useState('');
@@ -113,6 +120,10 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    void refreshKnowledgeGraph();
+  }, []);
+
+  useEffect(() => {
     let active = true;
     void window.strataAi
       .listSessions()
@@ -144,7 +155,7 @@ export function App() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' });
-  }, [session.status]);
+  }, [session.status, showKnowledgeGraph]);
 
   async function refreshSessions(): Promise<void> {
     setHistoryLoading(true);
@@ -164,6 +175,23 @@ export function App() {
       );
     } finally {
       setHistoryLoading(false);
+    }
+  }
+
+  async function refreshKnowledgeGraph(): Promise<void> {
+    setGraphLoading(true);
+    try {
+      const result = await window.strataAi.getKnowledgeGraph();
+      if (result.ok) {
+        setKnowledgeGraph(result.data);
+        setGraphError('');
+      } else {
+        setGraphError('The local knowledge map could not be loaded.');
+      }
+    } catch {
+      setGraphError('The local knowledge map could not be loaded.');
+    } finally {
+      setGraphLoading(false);
     }
   }
 
@@ -247,6 +275,7 @@ export function App() {
   }
 
   async function startSession(topic: string): Promise<void> {
+    setShowKnowledgeGraph(false);
     await runProviderRequest(async () => {
       setEndError('');
       dispatch({ type: 'start', topic });
@@ -272,6 +301,7 @@ export function App() {
         submittedQuestionId: request.questionId,
       });
       await refreshSessions();
+      await refreshKnowledgeGraph();
     } else {
       handleProviderFailure(result.error);
       dispatch({ type: 'request_failed', message: result.error.message });
@@ -356,6 +386,7 @@ export function App() {
         sessions.filter((session) => session.id !== sessionId),
       );
       await refreshSessions();
+      await refreshKnowledgeGraph();
       return true;
     } else {
       setLocalError("Couldn't delete that local session. Please try again.");
@@ -375,6 +406,7 @@ export function App() {
     const result = await window.strataAi.restoreLearningData();
     if (result.ok && result.data.status === 'restored') {
       await refreshSessions();
+      await refreshKnowledgeGraph();
       requestAnimationFrame(() => {
         document.getElementById('recent-sessions-heading')?.focus();
       });
@@ -453,6 +485,7 @@ export function App() {
         questionId: session.questionId,
       });
       challengeRequest.current = null;
+      await refreshKnowledgeGraph();
     } else {
       handleProviderFailure(result.error);
       setChallengeError(result.error.message);
@@ -463,6 +496,7 @@ export function App() {
   function returnHome(): void {
     if (operationBusy) return;
     dispatch({ type: 'restart' });
+    setShowKnowledgeGraph(false);
     setLocalError('');
     setEndError('');
     void refreshSessions();
@@ -622,7 +656,21 @@ export function App() {
 
       {!showProviderSettings &&
         !provider.loading &&
-        session.status === 'idle' && (
+        session.status === 'idle' &&
+        showKnowledgeGraph && (
+          <KnowledgeGraphView
+            snapshot={knowledgeGraph}
+            loading={graphLoading}
+            error={graphError}
+            onRefresh={refreshKnowledgeGraph}
+            onStartLearning={() => setShowKnowledgeGraph(false)}
+          />
+        )}
+
+      {!showProviderSettings &&
+        !provider.loading &&
+        session.status === 'idle' &&
+        !showKnowledgeGraph && (
           <>
             {localError && (
               <Typography role="alert" color="error" sx={{ px: 3, pt: 2 }}>
@@ -637,6 +685,8 @@ export function App() {
               sessions={recentSessions}
               historyLoading={historyLoading}
               historyError={historyError}
+              graphConceptCount={knowledgeGraph?.stats.concepts ?? 0}
+              graphLoading={graphLoading}
               onStart={startSession}
               onOpenSession={openSession}
               onRetryHistory={refreshSessions}
@@ -646,6 +696,7 @@ export function App() {
               onOpenDeepSeekKeys={openDeepSeekKeys}
               onExportLearningData={exportLearningData}
               onRestoreLearningData={restoreLearningData}
+              onOpenKnowledgeGraph={() => setShowKnowledgeGraph(true)}
               providerSettingsInitiallyExpanded={providerSettingsRequested}
             />
           </>

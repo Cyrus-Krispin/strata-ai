@@ -25,6 +25,13 @@ const evaluation = {
       finding: 'Identifies the main lookup advantage.',
     },
   ],
+  concepts: [
+    {
+      name: 'Database indexes',
+      assessment: 'partial',
+      evidenceOrdinal: 0,
+    },
+  ],
   unresolvedGap: 'The write and storage costs are not yet explained.',
   uncertainty: 'low',
   proposedNextMove: 'probe',
@@ -51,7 +58,7 @@ test('opens a migrated database with safety pragmas enabled', () => {
     .get();
   const foreignKeys = database.prepare('PRAGMA foreign_keys').get();
 
-  assert.equal(migration.version, 3);
+  assert.equal(migration.version, 4);
   assert.equal(foreignKeys.foreign_keys, 1);
   database.close();
 });
@@ -88,7 +95,7 @@ test('migrates a version-1 database without rewriting existing sessions', () => 
     database
       .prepare('SELECT MAX(version) AS version FROM schema_migrations')
       .get().version,
-    3,
+    4,
   );
   assert.equal(
     database.prepare('SELECT id FROM learning_sessions').get().id,
@@ -97,6 +104,11 @@ test('migrates a version-1 database without rewriting existing sessions', () => 
   assert.ok(
     database
       .prepare("SELECT name FROM sqlite_master WHERE name = 'help_requests'")
+      .get(),
+  );
+  assert.ok(
+    database
+      .prepare("SELECT name FROM sqlite_master WHERE name = 'concepts'")
       .get(),
   );
   assert.ok(
@@ -110,7 +122,7 @@ test('migrates a version-1 database without rewriting existing sessions', () => 
 });
 
 test('rejects gapped and newer migration histories', () => {
-  for (const versions of [[2], [1, 2, 3, 4]]) {
+  for (const versions of [[2], [1, 2, 3, 4, 5]]) {
     const database = new DatabaseSync(':memory:');
     database.exec(`
       CREATE TABLE schema_migrations (
@@ -154,6 +166,34 @@ test('rejects foreign-key corruption during verification', () => {
   assert.throws(
     () => verifyLearningDatabase(database),
     /invalid relationships/i,
+  );
+  database.close();
+});
+
+test('adds graph tables when a prior build already used migration version 3', () => {
+  const database = new DatabaseSync(':memory:');
+  database.exec(`
+    CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL) STRICT;
+    INSERT INTO schema_migrations VALUES (1, '2026-08-30T00:00:00.000Z');
+    INSERT INTO schema_migrations VALUES (2, '2026-08-30T00:01:00.000Z');
+    INSERT INTO schema_migrations VALUES (3, '2026-08-30T00:02:00.000Z');
+    CREATE TABLE learning_sessions (id TEXT PRIMARY KEY) STRICT;
+    CREATE TABLE questions (id TEXT PRIMARY KEY) STRICT;
+    CREATE TABLE evaluations (id TEXT PRIMARY KEY) STRICT;
+  `);
+
+  migrateLearningDatabase(database);
+
+  assert.equal(
+    database
+      .prepare('SELECT MAX(version) AS version FROM schema_migrations')
+      .get().version,
+    4,
+  );
+  assert.ok(
+    database
+      .prepare("SELECT name FROM sqlite_master WHERE name = 'concept_evidence'")
+      .get(),
   );
   database.close();
 });

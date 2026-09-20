@@ -22,6 +22,8 @@ const strataAiApi: StrataAiApi = {
   getSession: (request) => ipcRenderer.invoke('learning:get-session', request),
   listSessions: (request = {}) =>
     ipcRenderer.invoke('learning:list-sessions', request),
+  getKnowledgeGraph: (request = {}) =>
+    ipcRenderer.invoke('learning:knowledge-graph', request),
   endSession: (request) => ipcRenderer.invoke('learning:end-session', request),
   deleteSession: (request) =>
     ipcRenderer.invoke('learning:delete-session', request),

@@ -169,6 +169,13 @@ export const founderEvaluationCases = cases.map((fixture) => ({
   evaluation: {
     status: fixture.quality,
     evidence: [{ excerpt: fixture.excerpt, finding: fixture.finding }],
+    concepts: [
+      {
+        name: 'Gradient-based learning',
+        assessment: fixture.quality,
+        evidenceOrdinal: 0,
+      },
+    ],
     unresolvedGap: fixture.gap,
     uncertainty: fixture.quality === 'uncertain' ? 'high' : 'low',
     proposedNextMove: fixture.move,
@@ -180,6 +187,36 @@ export const founderEvaluationCases = cases.map((fixture) => ({
 const validBase = founderEvaluationCases[0];
 
 export const invalidEvaluationCases = [
+  {
+    name: 'concept points beyond available evidence',
+    answer: validBase.answer,
+    evaluation: {
+      ...validBase.evaluation,
+      concepts: [
+        {
+          name: 'Gradient-based learning',
+          assessment: 'demonstrated',
+          evidenceOrdinal: 3,
+        },
+      ],
+    },
+    error: /Concept evidence must reference an available evidence item/,
+  },
+  {
+    name: 'concept name is too broad to be useful',
+    answer: validBase.answer,
+    evaluation: {
+      ...validBase.evaluation,
+      concepts: [
+        {
+          name: 'AI, ML, gradients, optimization, and everything else',
+          assessment: 'demonstrated',
+          evidenceOrdinal: 0,
+        },
+      ],
+    },
+    error: /concepts/,
+  },
   {
     name: 'fabricated evidence excerpt',
     answer: validBase.answer,
