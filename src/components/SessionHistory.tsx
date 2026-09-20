@@ -6,7 +6,6 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
-import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
@@ -25,8 +24,8 @@ type SessionHistoryProps = {
 function progressLabel(session: LearningSessionSummary): string {
   const counts = session.evaluationCounts;
   const parts = [
-    counts.demonstrated ? `${counts.demonstrated} demonstrated` : '',
-    counts.partial ? `${counts.partial} partial` : '',
+    counts.demonstrated ? `${counts.demonstrated} clear` : '',
+    counts.partial ? `${counts.partial} developing` : '',
     counts.misconception ? `${counts.misconception} to revisit` : '',
     counts.uncertain ? `${counts.uncertain} uncertain` : '',
   ].filter(Boolean);
@@ -66,19 +65,30 @@ export function SessionHistory({
     <Box
       component="section"
       aria-labelledby="recent-sessions-heading"
-      sx={{ mt: 8 }}
+      sx={{ mt: { xs: 7, md: 9 } }}
     >
-      <Typography
-        id="recent-sessions-heading"
-        ref={headingRef}
-        tabIndex={-1}
-        component="h2"
-        variant="overline"
-        color="text.secondary"
-        sx={{ fontWeight: 750, letterSpacing: '0.14em' }}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          gap: 2,
+        }}
       >
-        Recent sessions
-      </Typography>
+        <Typography
+          id="recent-sessions-heading"
+          ref={headingRef}
+          tabIndex={-1}
+          component="h2"
+          variant="h2"
+          sx={{ fontSize: '1.75rem' }}
+        >
+          Continue learning
+        </Typography>
+        <Typography color="text.secondary" sx={{ fontSize: '0.78rem' }}>
+          Stored only on this device
+        </Typography>
+      </Box>
       {deleteMessage && (
         <Typography role="status" color="text.secondary" sx={{ mt: 2 }}>
           {deleteMessage}
@@ -105,16 +115,20 @@ export function SessionHistory({
         </Typography>
       )}
       {shouldShowHistoryRows(loading, error) && (
-        <Stack divider={<Divider flexItem />} sx={{ mt: 1.5 }}>
+        <Stack spacing={1.25} sx={{ mt: 2.5 }}>
           {sessions.map((session) => (
             <Box
               key={session.id}
               sx={{
-                py: 2.25,
+                p: { xs: 2, sm: 2.5 },
                 display: 'grid',
                 gridTemplateColumns: { xs: '1fr', sm: '1fr auto' },
                 gap: 2,
                 alignItems: 'center',
+                bgcolor: 'background.paper',
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2,
               }}
             >
               <Box>
@@ -125,14 +139,16 @@ export function SessionHistory({
                   color="text.secondary"
                   sx={{ mt: 0.6, fontSize: '0.76rem', lineHeight: 1.5 }}
                 >
-                  {session.status === 'active' ? 'Active' : 'Ended'} ·{' '}
+                  {session.status === 'active' ? 'In progress' : 'Completed'} ·{' '}
                   {session.answeredTurns} answered · {progressLabel(session)}
                 </Typography>
               </Box>
               <Stack direction="row" spacing={1}>
                 <Button
-                  variant="outlined"
-                  color="inherit"
+                  variant={
+                    session.status === 'active' ? 'contained' : 'outlined'
+                  }
+                  color="primary"
                   type="button"
                   onClick={() => void onOpen(session.id)}
                 >
@@ -140,7 +156,7 @@ export function SessionHistory({
                 </Button>
                 <Button
                   variant="text"
-                  color="error"
+                  color="inherit"
                   type="button"
                   onClick={() => {
                     setDeleteError('');

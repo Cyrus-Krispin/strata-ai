@@ -4,6 +4,7 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
@@ -39,6 +40,37 @@ const nextMoveLabels: Record<EvaluationResult['proposedNextMove'], string> = {
   hint: 'Offer more support',
 };
 
+const statusContent: Record<
+  EvaluationResult['status'],
+  { heading: string; description: string; color: string; bg: string }
+> = {
+  demonstrated: {
+    heading: 'Your reasoning holds up.',
+    description: 'You showed enough evidence to move the challenge forward.',
+    color: '#174C43',
+    bg: '#E4EFEA',
+  },
+  partial: {
+    heading: 'You have the shape of it.',
+    description: 'The core idea is present; one connection still needs work.',
+    color: '#85511F',
+    bg: '#F5EAD9',
+  },
+  misconception: {
+    heading: 'There is one idea to untangle.',
+    description: 'Your answer gives us a precise place to correct the model.',
+    color: '#973E34',
+    bg: '#F6E5E1',
+  },
+  uncertain: {
+    heading: 'The evidence is not clear yet.',
+    description:
+      'The next question will help separate knowledge from uncertainty.',
+    color: '#53615C',
+    bg: '#E9ECE9',
+  },
+};
+
 export function FeedbackView({
   topic,
   turn,
@@ -61,6 +93,7 @@ export function FeedbackView({
   const previousRevisionCount = useRef(evaluationHistory.length);
   const presentedRevisions = presentEvaluationRevisions(evaluationHistory);
   const challengeLimitReached = evaluationHistory.length >= 3;
+  const status = statusContent[evaluation.status];
 
   useEffect(() => {
     headingRef.current?.focus();
@@ -77,16 +110,17 @@ export function FeedbackView({
     <Box
       component="main"
       sx={{
-        minHeight: 'calc(100vh - 4rem)',
-        px: { xs: 2.5, sm: 6 },
-        py: { xs: 5, sm: 8 },
+        minHeight: 'calc(100vh - 4.5rem)',
+        px: { xs: 2, sm: 4 },
+        py: { xs: 4, md: 6 },
+        pb: 9,
       }}
     >
       <Box
         component="section"
         aria-labelledby="feedback-heading"
         sx={{
-          width: 'min(100%, 60rem)',
+          width: 'min(100%, 68rem)',
           mx: 'auto',
         }}
       >
@@ -102,15 +136,36 @@ export function FeedbackView({
           >
             {topic} · {String(turn).padStart(2, '0')}
           </Typography>
+          <Chip
+            label={evaluationStatusLabel(evaluation.status)}
+            size="small"
+            sx={{
+              mt: 2,
+              bgcolor: status.bg,
+              color: status.color,
+              fontWeight: 800,
+            }}
+          />
           <Typography
             id="feedback-heading"
             component="h1"
             variant="h1"
             ref={headingRef}
             tabIndex={-1}
-            sx={{ mt: 1.5, fontSize: 'clamp(2.5rem, 5vw, 4rem)' }}
+            sx={{
+              mt: 2,
+              maxWidth: '16ch',
+              fontSize: { xs: '2.75rem', sm: '4rem' },
+              lineHeight: 1,
+            }}
           >
-            Provisional evaluation: {evaluationStatusLabel(evaluation.status)}
+            {status.heading}
+          </Typography>
+          <Typography
+            color="text.secondary"
+            sx={{ mt: 2, maxWidth: '36rem', lineHeight: 1.65 }}
+          >
+            {status.description} This judgment is provisional.
           </Typography>
         </Box>
 
@@ -175,7 +230,7 @@ export function FeedbackView({
               variant="h2"
               sx={{ mb: 3, fontSize: '1.45rem' }}
             >
-              Evidence
+              What your answer showed
             </Typography>
             <Stack spacing={1.5}>
               {evaluation.evidence.map((evidence) => (
@@ -184,16 +239,18 @@ export function FeedbackView({
                   key={`${evidence.excerpt}-${evidence.finding}`}
                   sx={{
                     m: 0,
-                    py: 2,
-                    pl: 2.5,
-                    borderLeft: 2,
-                    borderColor: 'primary.main',
+                    p: { xs: 2.5, sm: 3 },
+                    bgcolor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
                   }}
                 >
                   <Typography
                     sx={{
-                      fontSize: '1.08rem',
-                      lineHeight: 1.5,
+                      fontFamily: 'Georgia, serif',
+                      fontSize: '1.16rem',
+                      lineHeight: 1.55,
                     }}
                   >
                     “{evidence.excerpt}”
@@ -212,14 +269,23 @@ export function FeedbackView({
           <Box
             component="section"
             aria-labelledby="edge-heading"
-            sx={{ py: 5 }}
+            sx={{
+              my: 5,
+              p: 3,
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              borderRadius: 2,
+            }}
           >
             <Typography
               variant="overline"
-              color="primary.main"
-              sx={{ fontWeight: 750, letterSpacing: '0.16em' }}
+              sx={{
+                opacity: 0.7,
+                fontWeight: 750,
+                letterSpacing: '0.16em',
+              }}
             >
-              Gap
+              Your next edge
             </Typography>
             <Typography
               id="edge-heading"
@@ -229,7 +295,7 @@ export function FeedbackView({
             >
               {evaluation.unresolvedGap}
             </Typography>
-            <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
+            <Typography sx={{ opacity: 0.72, lineHeight: 1.6 }}>
               Evaluation uncertainty: {evaluation.uncertainty}
             </Typography>
           </Box>
@@ -238,7 +304,13 @@ export function FeedbackView({
         <Box
           component="section"
           aria-labelledby="next-move-heading"
-          sx={{ py: 4, borderTop: 1, borderColor: 'divider' }}
+          sx={{
+            p: 3,
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 2,
+          }}
         >
           <Typography
             variant="overline"

@@ -1,7 +1,6 @@
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
-import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
@@ -30,9 +29,16 @@ export function SessionReview({
   }, []);
 
   return (
-    <Box component="main" sx={{ px: { xs: 2.5, sm: 6 }, py: 6 }}>
-      <Box sx={{ width: 'min(100%, 56rem)', mx: 'auto' }}>
-        <Typography variant="overline" color="text.secondary">
+    <Box
+      component="main"
+      sx={{ px: { xs: 2, sm: 4 }, py: { xs: 5, md: 8 }, pb: 10 }}
+    >
+      <Box sx={{ width: 'min(100%, 64rem)', mx: 'auto' }}>
+        <Typography
+          variant="overline"
+          color="primary.main"
+          sx={{ fontWeight: 800, letterSpacing: '0.14em' }}
+        >
           {headingLabel}
         </Typography>
         <Typography
@@ -40,9 +46,21 @@ export function SessionReview({
           variant="h1"
           ref={headingRef}
           tabIndex={-1}
-          sx={{ mt: 1, fontSize: '3rem' }}
+          sx={{
+            mt: 1.5,
+            maxWidth: '18ch',
+            fontSize: { xs: '3rem', sm: '4.75rem' },
+            lineHeight: 0.98,
+          }}
         >
           {topic}
+        </Typography>
+        <Typography
+          color="text.secondary"
+          sx={{ mt: 2.5, maxWidth: '38rem', lineHeight: 1.65 }}
+        >
+          A record of what you explained, where the edge appeared, and the help
+          you used.
         </Typography>
         <SessionSummary turns={turns} />
         <Typography
@@ -50,11 +68,21 @@ export function SessionReview({
           variant="h2"
           sx={{ mt: 8, fontSize: '1.65rem' }}
         >
-          Turn by turn
+          Your learning trail
         </Typography>
-        <Stack divider={<Divider flexItem />} sx={{ mt: 5 }}>
+        <Stack spacing={1.25} sx={{ mt: 3 }}>
           {turns.map((turn) => (
-            <Box key={turn.questionId} component="article" sx={{ py: 4 }}>
+            <Box
+              key={turn.questionId}
+              component="article"
+              sx={{
+                p: { xs: 2.5, sm: 3 },
+                bgcolor: 'background.paper',
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2,
+              }}
+            >
               <Typography color="text.secondary" sx={{ fontSize: '0.75rem' }}>
                 Question {turn.turn}
               </Typography>
